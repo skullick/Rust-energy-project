@@ -1,11 +1,6 @@
-// First, we are going to introduce some units of energy. For whatever reason, we prefer BTU above
-// Joules and Calories, but we want to support all 3 of these in this module. Double check the
-// conversion methods, and make sure you fully understand them.
 
 use std::marker::PhantomData;
 
-// You may uncomment and use the following import if you need it. You may also read its
-// documentation at https://doc.rust-lang.org/std/cell/struct.RefCell.html
 use std::cell::RefCell;
 
 #[derive(Eq, PartialEq, Debug, Clone, Copy)]
@@ -44,8 +39,6 @@ impl From<BTU> for Calorie {
 /// A technology for storing energy for later consumption.
 pub trait Fuel {
     /// The output unit of the energy density.
-    ///
-    /// Think about this: why did we chose this to be an associated type rather than a generic?
     type Output: Into<BTU> + From<BTU>;
 
     /// The amount of energy contained in a single unit of fuel.
@@ -104,14 +97,6 @@ impl<F: Fuel> FuelContainer<F> {
 pub trait ProvideEnergy<F: Fuel> {
     /// Consume the fuel container and return the created energy, based on the power density of the
     /// fuel and potentially other factors.
-    ///
-    /// Some fuel providers might have some kind of decay or inefficiency, which should be reflected
-    /// here. Otherwise, [ProvideEnergy::provide_energy_with_efficiency] or
-    /// [ProvideEnergy::provide_energy_ideal] might be good enough.
-    ///
-    /// Not all `ProvideEnergy` implementations need to have internal state. Therefore, this
-    /// interface accepts `&self`, not `&mut self`. You might need to use special language features
-    /// to overcome this.
     fn provide_energy(&self, f: FuelContainer<F>) -> <F as Fuel>::Output;
 
     /// Convert the amount of fuel in `f` with an exact efficiency of `e`.
@@ -119,8 +104,7 @@ pub trait ProvideEnergy<F: Fuel> {
     /// NOTE: all efficiencies are interpreted as u8 values that can be at most 100, and represent a
     /// percent. If an efficiency above 100 is supplied, the code should treat it as 100. That is to
     /// say that the efficiency is "saturating" at 100%.
-    ///
-    /// This method must be provided as it will be the same in all implementations.
+
     fn provide_energy_with_efficiency(&self, f: FuelContainer<F>, e: u8) -> <F as Fuel>::Output {
         let real_e = if e > 100 {100} else {e};
         let energy = (f.amount * F::energy_density().into() * (real_e as u32)) / 100;
@@ -128,9 +112,7 @@ pub trait ProvideEnergy<F: Fuel> {
 
     }
 
-    /// Same as [`ProvideEnergy::provide_energy_with_efficiency`], but with an efficiency of 100.
-    ///
-    /// This method must be provided as it will be the same in all implementations.
+
     fn provide_energy_ideal(&self, f: FuelContainer<F>) -> <F as Fuel>::Output {
         let energy = f.amount * F::energy_density().into();
         F::Output::from(energy)
@@ -148,9 +130,8 @@ impl<F: Fuel> ProvideEnergy<F> for NuclearReactor {
 
 /// A combustion engine that can only consume `Diesel`.
 ///
-/// The `DECAY` const must be interpreted as such: per every `DECAY` times `provide_energy` is
-/// called on an instance of this type, the efficiency should reduce by one. The initial efficiency
-/// must be configurable with a `fn new(efficiency: u8) -> Self`.
+/// The `DECAY` const is interpreted as such: per every `DECAY` times `provide_energy` is
+/// called on an instance of this type, the efficiency should reduce by one. 
 pub struct InternalCombustion<const DECAY: u32>{
     efficiency: RefCell::<u8>,
     count: RefCell::<u32>
@@ -198,7 +179,7 @@ impl<const EFFICIENCY: u8, F: Fuel> ProvideEnergy<F> for OmniGenerator<EFFICIENC
 /// The energy density of the new fuel type is the average of the two given, once converted to BTU.
 /// The output unit should also be BTU.
 ///
-/// This can represent a new fuel type, thus it must implement `Fuel`.
+/// This can represent a new fuel type, thus it is implemented as `Fuel`.
 pub struct Mixed<F1: Fuel, F2: Fuel>(PhantomData<(F1, F2)>);
 
 impl<F1: Fuel, F2: Fuel> Fuel for Mixed<F1, F2> {
@@ -211,16 +192,11 @@ impl<F1: Fuel, F2: Fuel> Fuel for Mixed<F1, F2> {
     }
 }
 
-// Now think about how you can make the mixer configurable, such that it would produce a new fuel
-// with an energy density that is more influences by one type than the other.
+// Configure the mixer, such that it would produce a new fuel with an energy density
+// that is more influences by one type than the other.
 //
 // For example, you have a mixer of F1, F2, and some coefficient C1, where the energy density of the
-// mixture is `F1 * C1 + F2 * (1 - C1) )` where `C1` is a ratio (which you have to represent again
-// with a u8 percent).
-//
-// The main trick is to overcome the fact that `fn energy_density` does not take in a `self`, so the
-// coefficients need to be incorporated in some other way (you've already seen examples of that in
-// this file ;)).
+// mixture is `F1 * C1 + F2 * (1 - C1) )` where `C1` is a ratio 
 pub struct CustomMixed<const C: u8, F1, F2>(PhantomData<(F1, F2)>);
 impl<const C: u8, F1: Fuel, F2: Fuel> Fuel for CustomMixed<C, F1, F2> {
     type Output = BTU;
@@ -240,10 +216,7 @@ pub fn omni_80_energy(amount: u32) -> BTU {
     amount * 80 / 100
 }
 
-// Finally, let's consider marker traits, and some trait bounds.
 
-/// Some traits are just markers. They don't bring any additional functionality anything, other than
-/// marking a type with some trait.
 pub trait IsRenewable {}
 impl IsRenewable for LithiumBattery {}
 
@@ -257,8 +230,7 @@ impl<F: Fuel + IsRenewable> ProvideEnergy<F> for GreenEngine<F> {
     }
 }
 
-/// Define the following struct such that it only provides energy if the fuel's output type is
-/// `BTU`.
+///  the following struct  only provides energy if the fuel's output type is `BTU`.
 ///
 /// It has perfect efficiency.
 pub struct BritishEngine<F: Fuel>(pub PhantomData<F>);
