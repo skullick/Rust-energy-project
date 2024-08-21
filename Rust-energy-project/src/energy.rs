@@ -50,7 +50,6 @@ impl Fuel for Diesel {
     type Output = Joule;
     fn energy_density() -> Self::Output {
         Self::Output::from(100)
-        //todo!("100 BTU")
     }
 }
 
@@ -59,7 +58,6 @@ impl Fuel for LithiumBattery {
     type Output = Calorie;
     fn energy_density() -> Self::Output {
         Self::Output::from(200)
-        //todo!("200 BTU")
     }
 }
 
@@ -68,7 +66,6 @@ impl Fuel for Uranium {
     type Output = Joule;
     fn energy_density() -> Self::Output {
         Self::Output::from(1000)
-        //todo!("1000 BTU")
     }
 }
 
@@ -170,14 +167,12 @@ pub struct OmniGenerator<const EFFICIENCY: u8>;
 impl<const EFFICIENCY: u8, F: Fuel> ProvideEnergy<F> for OmniGenerator<EFFICIENCY> {
     fn provide_energy(&self, f: FuelContainer<F>) -> <F as Fuel>::Output {
         self.provide_energy_with_efficiency(f, EFFICIENCY)
-        //todo!("complete the implementation; note that you might need to change the trait bounds and generics of the `impl` line");
     }
 }
 
 /// A type that can wrap two different fuel types and mix them together.
 ///
 /// The energy density of the new fuel type is the average of the two given, once converted to BTU.
-/// The output unit should also be BTU.
 ///
 /// This can represent a new fuel type, thus it is implemented as `Fuel`.
 pub struct Mixed<F1: Fuel, F2: Fuel>(PhantomData<(F1, F2)>);
@@ -188,7 +183,6 @@ impl<F1: Fuel, F2: Fuel> Fuel for Mixed<F1, F2> {
     fn energy_density() -> Self::Output {
         let mixed_energy = (F1::energy_density().into() + F2::energy_density().into())/2;
         Self::Output::from(mixed_energy)
-        //todo!("complete the implementation; note that you might need to change the trait bounds and generics of the `impl` line");
     }
 }
 
@@ -230,7 +224,7 @@ impl<F: Fuel + IsRenewable> ProvideEnergy<F> for GreenEngine<F> {
     }
 }
 
-///  the following struct  only provides energy if the fuel's output type is `BTU`.
+/// The following struct  only provides energy if the fuel's output type is `BTU`.
 ///
 /// It has perfect efficiency.
 pub struct BritishEngine<F: Fuel>(pub PhantomData<F>);
